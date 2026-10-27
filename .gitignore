@@ -1,0 +1,28 @@
+# Local settings, API keys, library files and backups
+.env
+.env.*
+!.env.example
+**/data/
+도서목록/
+**/backups/
+*.xlsx
+*.xls
+*.csv
+*.tsv
+
+# Local Python environment and generated files
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+*.py[cod]
+*.log
+*.tmp
+*.lock
+*.zip
+
+# Local screenshots and machine-specific notes
+*.png
+!app/static/test-ean13.png
+먼저읽기.md
+app/사용안내.md
+app/검증결과.md

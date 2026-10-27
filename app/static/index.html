@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>책장 · 나의 도서 기록</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/scanner.js" defer></script><script src="/static/scanner-wasm.js" defer></script><script src="/static/camera-engine.js" defer></script><script src="/static/advanced-reader.js" defer></script><script src="/static/camera-worker-client.js" defer></script><script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="top"><a class="brand" href="/" aria-label="책장 홈"><span class="logo">冊</span><span>책장<small>나의 도서 기록</small></span></a><div class="top-actions"><span class="local-dot">내 컴퓨터에 저장</span><button id="settings-open" class="quiet">설정</button><button id="shutdown" class="quiet">종료</button></div></header>
+<main>
+  <section class="intro"><div><p class="eyebrow">MY PERSONAL LIBRARY</p><h1>책 한 권, 기록 하나.</h1><p class="muted">바코드를 비추고, 책의 정보를 확인한 뒤 나만의 서가에 담으세요.</p></div><div class="counter"><strong id="total-books">0</strong><span>종의 책 · <b id="total-copies">0</b>권</span></div></section>
+  <div id="notice" class="notice" role="status" aria-live="polite">준비 중입니다.</div>
+  <div id="recovery" class="recovery" hidden>이전 저장 요청의 결과를 확인해야 합니다. 같은 요청으로 다시 확인하면 중복 저장되지 않습니다. <button id="retry-save">다시 확인</button><button id="discard-request" class="quiet">요청 정리</button></div>
+  <section class="workspace">
+    <article class="card camera-card"><div class="section-head"><h2><span class="step">01</span>바코드 스캔</h2><span id="camera-state" class="badge">카메라 꺼짐</span></div>
+      <div class="viewfinder"><video id="video" autoplay playsinline muted></video><div id="camera-placeholder"><span class="scan-icon">▥</span><strong>책 뒷면의 바코드를 비춰주세요</strong><span>영상은 이 컴퓨터에서만 처리됩니다</span></div><div class="scan-frame"><i></i><i></i><i></i><i></i></div><span class="camera-caption">ISBN · EAN-13</span></div>
+      <div class="camera-controls"><select id="camera-select" aria-label="카메라 선택"><option value="">기본 카메라</option></select><button id="camera-start">카메라 켜기</button><button id="camera-stop" class="quiet" disabled>끄기</button></div>
+      <div class="scan-tools"><span id="scan-status" role="status">카메라 대기</span><button id="scan-again" type="button" class="quiet" disabled>인식 재시작</button><button id="scan-once" type="button" class="quiet" disabled>현재 화면 정밀 인식</button></div>
+      <label for="scan-mode">인식 모드</label><select id="scan-mode"><option value="normal">일반 바코드</option><option value="small">작은 바코드 · 중앙 2배 확대</option></select><p id="scan-mode-help" class="hint">작은 바코드는 확대 모드로 바꿔 중앙에 맞추세요. 확대는 촬영되지 않은 세부를 복원하지는 못합니다.</p>
+      <p class="hint">빛 반사를 피해 바코드 전체를 보여주세요. 인식하면 조회가 시작됩니다.</p>
+      <div class="divider"><span>또는 ISBN 직접 입력</span></div>
+      <form id="lookup-form"><label for="isbn-input">ISBN</label><div class="input-group"><input id="isbn-input" placeholder="978로 시작하는 13자리 번호" maxlength="80" autocomplete="off"><button id="lookup-button" type="submit">정보 조회</button></div></form>
+      <button id="manual" class="text-button">ISBN 없는 책 직접 등록하기 →</button>
+      <div class="photo-input"><label for="barcode-photo">또는 선명한 바코드 사진으로 인식</label><input id="barcode-photo" type="file" accept="image/jpeg,image/png,image/webp"><p id="photo-status" class="hint" role="status">JPG·PNG·WebP 사진을 선택하세요. 파일은 이 브라우저에서만 읽으며 서버에 전송하거나 저장하지 않습니다.</p></div>
+    </article>
+    <article class="card details-card"><div class="section-head"><h2><span class="step">02</span><span id="detail-heading">도서 정보 확인</span></h2><span id="source-badge" class="badge">직접 입력 가능</span></div>
+      <div id="candidates" class="candidates" hidden></div><button id="more-results" class="text-button" hidden>후보 더 불러오기</button>
+      <form id="book-form"><fieldset id="book-fields">
+        <label for="title">책 제목 <span class="required">*</span></label><input id="title" name="title" maxlength="1000" required placeholder="조회된 제목을 확인하거나 직접 입력하세요">
+        <label for="author">저자</label><input id="author" name="author" maxlength="1000" placeholder="저자·옮긴이">
+        <div class="form-row"><div><label for="publisher">출판사</label><input id="publisher" name="publisher" maxlength="500"></div><div><label for="year">발행년도</label><input id="year" name="year" maxlength="100"></div></div>
+        <div class="form-row small-first"><div><label for="quantity">권수</label><input id="quantity" name="quantity" type="number" value="1" min="1" max="100000" required></div><div><label for="location">소장 위치</label><input id="location" name="location" maxlength="500" placeholder="예: 거실 책장 2칸"></div></div>
+        <label for="memo">메모</label><textarea id="memo" name="memo" maxlength="2000" rows="2" placeholder="이 책에 남기고 싶은 기록"></textarea>
+      </fieldset><div class="book-meta"><span id="current-isbn">ISBN 없이 수동 등록</span><a id="detail-link" target="_blank" rel="noopener noreferrer" hidden>출처 보기 ↗</a></div><div class="save-actions"><button id="next-book" type="button" class="quiet">다음 책</button><button id="save-book" type="submit" class="primary">서가에 저장 <span>↗</span></button></div></form>
+    </article>
+  </section>
+  <section class="card library"><div class="section-head library-head"><div><p class="eyebrow">YOUR COLLECTION</p><h2>나의 서가 <span id="list-count" class="badge">0종</span></h2></div><div class="library-tools"><select id="page-size" aria-label="페이지당 도서 수"><option value="20">20개씩 보기</option><option value="30">30개씩 보기</option><option value="40">40개씩 보기</option><option value="50">50개씩 보기</option></select><input id="search" aria-label="서가 검색" placeholder="제목, 저자, ISBN 검색"><button id="reload" class="quiet">새로고침</button><button id="folder-open" class="quiet">저장 폴더 ↗</button></div></div><p id="file-path" class="file-path"></p><div class="table-scroll"><table><thead><tr><th>도서</th><th>출판사 / 연도</th><th>소장 위치</th><th>권수</th><th>관리</th></tr></thead><tbody id="book-list"></tbody></table></div><div id="empty" class="empty"><span>▤</span><strong>첫 번째 책을 기다리고 있어요</strong><p>책을 등록하면 이곳에서 다시 만날 수 있습니다.</p></div><nav class="library-pagination" aria-label="서가 페이지 이동"><span id="page-summary" role="status" aria-live="polite"></span><div class="page-controls"><button id="page-first" class="quiet" type="button">처음</button><button id="page-prev" class="quiet" type="button">이전</button><span id="page-numbers" class="page-numbers"></span><button id="page-next" class="quiet" type="button">다음</button><button id="page-last" class="quiet" type="button">마지막</button></div></nav></section>
+  <footer>책장 · 영상과 소장 기록은 로컬에, 서지정보는 국립중앙도서관에서.</footer>
+</main>
+<dialog id="settings-dialog"><form id="settings-form"><div class="section-head"><h2>책장 설정</h2><button type="button" id="settings-close" class="quiet" aria-label="닫기">✕</button></div><label for="api-key">국립중앙도서관 API 키</label><input id="api-key" type="password" autocomplete="new-password" maxlength="500" placeholder="비워두면 현재 키 유지"><p id="key-status" class="hint"></p><label for="workbook-path">Excel 저장 경로</label><input id="workbook-path" required placeholder="C:\도서\소장도서.xlsx"><p class="hint">파일명을 포함한 절대 경로를 입력하세요. 새 경로는 다음 저장 때 생성됩니다. 기존 자료는 자동 이동하지 않습니다.</p><label for="retention">보관할 백업 수</label><input id="retention" type="number" value="20" min="1" max="200" required><p class="hint">키는 현재 Windows 계정으로 암호화해 보관합니다.</p><div class="save-actions"><button type="button" id="connection-check" class="quiet">연결 확인</button><button type="submit" class="primary">설정 저장</button></div><p id="settings-message" role="status"></p></form><hr><div class="section-head"><h3>백업에서 복원</h3><button id="backups-load" class="quiet">목록 보기</button></div><p class="hint">복원 전 현재 파일도 백업합니다. Excel을 닫고 진행하세요.</p><div id="backup-list"></div></dialog>
+<dialog id="folder-dialog"><div class="section-head"><h2>저장 폴더</h2><button id="folder-close" class="quiet" type="button">닫기</button></div><label for="folder-path">실제 저장 위치</label><input id="folder-path" readonly><p id="folder-message" class="hint" role="status"></p><div class="save-actions"><button id="folder-copy" class="quiet" type="button">경로 복사</button><button id="folder-launch" type="button">파일 탐색기 열기</button></div><p><a href="/api/workbook-download" download>저장된 Excel 파일 다운로드</a></p><p class="hint">탐색기가 열리지 않으면 위 경로를 복사해 파일 탐색기 주소창에 붙여넣으세요. Codex가 실행한 서버에서는 Windows 실행 권한이 제한될 수 있습니다. 앱을 종료한 후 책장 폴더의 책장_실행.cmd를 직접 두 번 클릭해 실행하세요.</p></dialog>
+</body></html>
